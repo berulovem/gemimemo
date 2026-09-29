@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+
+<!-- スマホの全画面表示（アプリモード）に対応 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="買い物リスト">
+
+<!-- ホーム画面用のアイコン画像（必要に応じて画像URLを指定） -->
+<link rel="apple-touch-icon" href="https://via.placeholder.com/192/9c60b6/ffffff?text=SHOP">
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    /* ヘッダー */
+    .header {
+      background-color: #9c60b6;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      height: 48px;
+    }
+    .tabs {
+      display: flex;
+      gap: 12px;
+      font-size: 14px;
+      height: 100%;
+      overflow-x: auto;
+    }
+    .tab {
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      height: 100%;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .tab.active {
+      opacity: 1;
+      font-weight: bold;
+      border-bottom-color: white;
+    }
+    .header-icons {
+      display: flex;
+      gap: 12px;
+      font-size: 18px;
+    }
+    /* サマリー */
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .settings-btn {
+      font-size: 10px;
+      color: #9c60b6;
+      text-align: center;
+      cursor: pointer;
+    }
+    /* リスト部分 */
+    .container {
+      padding: 0 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: #9c60b6;
+      margin-right: 12px;
+      cursor: pointer;
+    }
+    .item-info {
+      flex-grow: 1;
+    }
+    .item-name {
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    .item-price {
+      font-size: 12px;
+      color: #666;
+    }
+    .delete-btn {
+      color: #9c60b6;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    /* 完了済みセクション */
+    .section-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 16px 0 8px 0;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    /* 空の状態の表示 */
+    .empty-message {
+      text-align: center;
+      color: #888;
+      margin-top: 40px;
+      font-size: 14px;
+    }
+    /* FAB (＋ボタン) */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      background-color: #9c60b6;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="tabs">
+      <div class="tab" onclick="switchTab('pal')">パル①</div>
+      <div class="tab active" onclick="switchTab('shopping')">買い物</div>
+      <div class="tab" onclick="switchTab('seven')">（セブン）</div>
+      <div class="tab" onclick="switchTab('tab1')">①</div>
+    </div>
+    <div class="header-icons">📁 🏠</div>
+  </div>
+
+  <div class="summary">
+    <div id="total-price">合計 ¥0</div>
+    <div class="settings-btn">⚙️<br>設定</div>
+  </div>
+
+  <div class="container" id="list-container"></div>
+
+  <div class="fab">＋</div>
+
+  <script>
+    // ページごとのデータ管理
+    const storeData = {
+      pal: {
+        active: [],
+        completed: []
+      },
+      shopping: {
+        active: [
+          { name: 'あ', price: 12 },
+          { name: 'キャベツ', price: 200 },
+          { name: '野菜1000', price: 0 }
+        ],
+        completed: [
+          { name: '産直たまご', price: 300 }
+        ]
+      },
+      seven: {
+        active: [],
+        completed: []
+      },
+      tab1: {
+        active: [],
+        completed: []
+      }
+    };
+
+    let currentTab = 'shopping';
+
+    // 画面を描画する関数
+    function render() {
+      const data = storeData[currentTab];
+      const container = document.getElementById('list-container');
+      const totalPriceEl = document.getElementById('total-price');
+
+      // 合計金額の計算
+      const total = [...data.active, ...data.completed].reduce((sum, item) => sum + item.price, 0);
+      totalPriceEl.textContent = `合計 ¥${total}`;
+
+      // リストが空の場合
+      if (data.active.length === 0 && data.completed.length === 0) {
+        container.innerHTML = '<div class="empty-message">商品はありません</div>';
+        return;
+      }
+
+      let html = '';
+
+      // 未完了アイテム
+      data.active.forEach(item => {
+        html += `
+          <div class="card">
+            <input type="checkbox" class="checkbox">
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              <div class="item-price">¥${item.price}</div>
+            </div>
+            <button class="delete-btn">🗑</button>
+          </div>
+        `;
+      });
+
+      // 完了済みアイテム
+      if (data.completed.length > 0) {
+        html += `<div class="section-title">完了済み 🗑</div>`;
+        data.completed.forEach(item => {
+          html += `
+            <div class="card">
+              <input type="checkbox" class="checkbox" checked>
+              <div class="item-info">
+                <div class="item-name">${item.name}</div>
+                <div class="item-price">¥${item.price}</div>
+              </div>
+              <button class="delete-btn">🗑</button>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = html;
+    }
+
+    // タブ切り替え関数
+    function switchTab(tabKey) {
+      currentTab = tabKey;
+
+      // タブの見た目を更新
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach((tab, index) => {
+        const keys = ['pal', 'shopping', 'seven', 'tab1'];
+        if (keys[index] === tabKey) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      // 画面を再描画
+      render();
+    }
+
+    // 初期表示
+    render();
+  </script>
+
+</body>
+</html>
