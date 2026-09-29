@@ -1,30 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>買い物リスト</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta charset="UTF-8">
-  <base target="_top">
-
-<!-- スマホの全画面表示（アプリモード）に対応 -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="買い物リスト">
-
-<!-- ホーム画面用のアイコン画像（必要に応じて画像URLを指定） -->
-<link rel="apple-touch-icon" href="https://via.placeholder.com/192/9c60b6/ffffff?text=SHOP">
-
+  <!-- スマホ全画面対応 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="買い物リスト">
 
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
     body {
-      background-color: #f8f9fa;
+      background-color: #f5f5f7;
       color: #333;
+      padding-bottom: 80px;
     }
     /* ヘッダー */
     .header {
@@ -33,24 +29,34 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 16px;
+      padding: 0 12px;
       height: 48px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .tabs {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       font-size: 14px;
       height: 100%;
       overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar {
+      display: none;
     }
     .tab {
-      opacity: 0.7;
+      opacity: 0.75;
       display: flex;
       align-items: center;
       cursor: pointer;
       height: 100%;
+      padding: 0 8px;
       border-bottom: 3px solid transparent;
       white-space: nowrap;
+      font-weight: 500;
     }
     .tab.active {
       opacity: 1;
@@ -67,32 +73,34 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px;
+      padding: 14px 16px;
       font-size: 20px;
       font-weight: bold;
-    }
-    .settings-btn {
-      font-size: 10px;
-      color: #9c60b6;
-      text-align: center;
-      cursor: pointer;
+      background-color: #fff;
+      border-bottom: 1px solid #e5e5e5;
     }
     /* リスト部分 */
     .container {
-      padding: 0 16px;
+      padding: 12px 16px;
     }
     .card {
       background: white;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 10px;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card.completed-item {
+      opacity: 0.6;
+    }
+    .card.completed-item .item-name {
+      text-decoration: line-through;
     }
     .checkbox {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       accent-color: #9c60b6;
       margin-right: 12px;
       cursor: pointer;
@@ -102,33 +110,34 @@
     }
     .item-name {
       font-size: 15px;
+      font-weight: 500;
       margin-bottom: 2px;
     }
     .item-price {
       font-size: 12px;
-      color: #666;
+      color: #777;
     }
     .delete-btn {
       color: #9c60b6;
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
+      padding: 4px 8px;
     }
     /* 完了済みセクション */
     .section-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      margin: 16px 0 8px 0;
-      color: #444;
+      margin: 18px 0 8px 0;
+      color: #666;
       display: flex;
       align-items: center;
       gap: 4px;
     }
-    /* 空の状態の表示 */
     .empty-message {
       text-align: center;
-      color: #888;
+      color: #999;
       margin-top: 40px;
       font-size: 14px;
     }
@@ -146,8 +155,9 @@
       justify-content: center;
       align-items: center;
       font-size: 28px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 10px rgba(156,96,182,0.4);
       cursor: pointer;
+      border: none;
     }
   </style>
 </head>
@@ -165,53 +175,46 @@
 
   <div class="summary">
     <div id="total-price">合計 ¥0</div>
-    <div class="settings-btn">⚙️<br>設定</div>
+    <div style="font-size: 10px; color: #9c60b6; text-align: center; cursor: pointer;">⚙️<br>設定</div>
   </div>
 
   <div class="container" id="list-container"></div>
 
-  <div class="fab">＋</div>
+  <button class="fab" onclick="addItem()">＋</button>
 
   <script>
-    // ページごとのデータ管理
-    const storeData = {
-      pal: {
-        active: [],
-        completed: []
-      },
+    // ブラウザ保存（localStorage）からデータを読み込み、無ければ初期データ
+    const defaultData = {
+      pal: { active: [], completed: [] },
       shopping: {
         active: [
-          { name: 'あ', price: 12 },
-          { name: 'キャベツ', price: 200 },
-          { name: '野菜1000', price: 0 }
+          { id: 1, name: 'あ', price: 12 },
+          { id: 2, name: 'キャベツ', price: 200 },
+          { id: 3, name: '野菜1000', price: 0 }
         ],
         completed: [
-          { name: '産直たまご', price: 300 }
+          { id: 4, name: '産直たまご', price: 300 }
         ]
       },
-      seven: {
-        active: [],
-        completed: []
-      },
-      tab1: {
-        active: [],
-        completed: []
-      }
+      seven: { active: [], completed: [] },
+      tab1: { active: [], completed: [] }
     };
 
+    let storeData = JSON.parse(localStorage.getItem('gemimemo_data')) || defaultData;
     let currentTab = 'shopping';
 
-    // 画面を描画する関数
+    function saveData() {
+      localStorage.setItem('gemimemo_data', JSON.stringify(storeData));
+    }
+
     function render() {
-      const data = storeData[currentTab];
+      const data = storeData[currentTab] || { active: [], completed: [] };
       const container = document.getElementById('list-container');
       const totalPriceEl = document.getElementById('total-price');
 
-      // 合計金額の計算
-      const total = [...data.active, ...data.completed].reduce((sum, item) => sum + item.price, 0);
-      totalPriceEl.textContent = `合計 ¥${total}`;
+      const total = [...data.active, ...data.completed].reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+      totalPriceEl.textContent = `合計 ¥${total.toLocaleString()}`;
 
-      // リストが空の場合
       if (data.active.length === 0 && data.completed.length === 0) {
         container.innerHTML = '<div class="empty-message">商品はありません</div>';
         return;
@@ -219,32 +222,30 @@
 
       let html = '';
 
-      // 未完了アイテム
-      data.active.forEach(item => {
+      data.active.forEach((item, index) => {
         html += `
           <div class="card">
-            <input type="checkbox" class="checkbox">
+            <input type="checkbox" class="checkbox" onchange="toggleComplete(${index}, false)">
             <div class="item-info">
-              <div class="item-name">${item.name}</div>
-              <div class="item-price">¥${item.price}</div>
+              <div class="item-name">${escapeHtml(item.name)}</div>
+              <div class="item-price">¥${Number(item.price).toLocaleString()}</div>
             </div>
-            <button class="delete-btn">🗑</button>
+            <button class="delete-btn" onclick="deleteItem(${index}, false)">🗑</button>
           </div>
         `;
       });
 
-      // 完了済みアイテム
       if (data.completed.length > 0) {
         html += `<div class="section-title">完了済み 🗑</div>`;
-        data.completed.forEach(item => {
+        data.completed.forEach((item, index) => {
           html += `
-            <div class="card">
-              <input type="checkbox" class="checkbox" checked>
+            <div class="card completed-item">
+              <input type="checkbox" class="checkbox" checked onchange="toggleComplete(${index}, true)">
               <div class="item-info">
-                <div class="item-name">${item.name}</div>
-                <div class="item-price">¥${item.price}</div>
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="item-price">¥${Number(item.price).toLocaleString()}</div>
               </div>
-              <button class="delete-btn">🗑</button>
+              <button class="delete-btn" onclick="deleteItem(${index}, true)">🗑</button>
             </div>
           `;
         });
@@ -253,28 +254,64 @@
       container.innerHTML = html;
     }
 
-    // タブ切り替え関数
     function switchTab(tabKey) {
       currentTab = tabKey;
-
-      // タブの見た目を更新
+      const tabKeys = ['pal', 'shopping', 'seven', 'tab1'];
       const tabs = document.querySelectorAll('.tab');
       tabs.forEach((tab, index) => {
-        const keys = ['pal', 'shopping', 'seven', 'tab1'];
-        if (keys[index] === tabKey) {
+        if (tabKeys[index] === tabKey) {
           tab.classList.add('active');
         } else {
           tab.classList.remove('active');
         }
       });
-
-      // 画面を再描画
       render();
     }
 
-    // 初期表示
+    function addItem() {
+      const name = prompt('商品名を入力してください:');
+      if (!name) return;
+      const priceStr = prompt('価格を入力してください（省略可）:', '0');
+      const price = parseInt(priceStr, 10) || 0;
+
+      storeData[currentTab].active.push({
+        id: Date.now(),
+        name: name,
+        price: price
+      });
+      saveData();
+      render();
+    }
+
+    function toggleComplete(index, isCompleted) {
+      const data = storeData[currentTab];
+      if (isCompleted) {
+        const item = data.completed.splice(index, 1)[0];
+        data.active.push(item);
+      } else {
+        const item = data.active.splice(index, 1)[0];
+        data.completed.push(item);
+      }
+      saveData();
+      render();
+    }
+
+    function deleteItem(index, isCompleted) {
+      const data = storeData[currentTab];
+      if (isCompleted) {
+        data.completed.splice(index, 1);
+      } else {
+        data.active.splice(index, 1);
+      }
+      saveData();
+      render();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     render();
   </script>
-
 </body>
 </html>
